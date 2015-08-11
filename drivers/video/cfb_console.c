@@ -768,7 +768,7 @@ void video_putc (const char c)
 		console_col++;
 
 		/* check for newline */
-		if (console_col >= CONSOLE_COLS) {
+		if (console_col >= (CONSOLE_COLS - 7)) {
 			console_newline ();
 			nl = 0;
 		}
