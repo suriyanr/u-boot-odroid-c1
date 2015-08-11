@@ -515,6 +515,42 @@ static void video_drawchars (int xx, int yy, unsigned char *s, int count)
 			s++;
 		}
 		break;
+
+	case GDF_COLOR_INDEX_24_RGB:
+		while (count--) {
+		int i;
+		u8 *draw;
+                /* Shift by 4 characters -> 24 bytes per character * 4 */
+                #define TEXT_OFFSET 96
+			c = *s;
+			cdat = video_fontdata + c * VIDEO_FONT_HEIGHT;
+			for (rows = VIDEO_FONT_HEIGHT, dest = dest0;
+			     rows--;
+			     dest += VIDEO_LINE_LEN) {
+				u8 bits = *cdat++;
+				u8 mask = 0b10000000;
+
+				draw = dest + TEXT_OFFSET;
+				for (i = 0; i < VIDEO_FONT_WIDTH; i++) {
+					if (bits & mask) {
+						draw[i * VIDEO_PIXEL_SIZE] = 0xFF;
+						draw[i * VIDEO_PIXEL_SIZE + 1] = 0xFF;
+						draw[i * VIDEO_PIXEL_SIZE + 2] = 0xFF;
+					}
+					else {
+						draw[i * VIDEO_PIXEL_SIZE] = 0x00;
+						draw[i * VIDEO_PIXEL_SIZE + 1] = 0x00;
+						draw[i * VIDEO_PIXEL_SIZE + 2] = 0x00;
+					}
+					mask = mask >> 1;
+				}
+			}
+			dest0 += VIDEO_FONT_WIDTH * VIDEO_PIXEL_SIZE;
+			s++;
+		}
+		flush_cache((unsigned long)(VIDEO_FB_ADRS), VIDEO_VISIBLE_COLS*VIDEO_VISIBLE_ROWS*VIDEO_PIXEL_SIZE);
+		break;
+
 	}
 }
 
@@ -680,7 +716,7 @@ static void console_newline (void)
 	console_col = 0;
 
 	/* Check if we need to scroll the terminal */
-	if (console_row >= CONSOLE_ROWS) {
+	if (console_row >= (CONSOLE_ROWS - 1)) {
 		/* Scroll everything up */
 		console_scrollup ();
 
@@ -1004,6 +1040,7 @@ next_run:
 }
 #endif
 
+#ifndef CONFIG_VIDEO_AML
 /*
  * Display the BMP file located at address bmp_image.
  */
@@ -1341,6 +1378,7 @@ int video_display_bitmap (ulong bmp_image, int x, int y)
 
 	return (0);
 }
+#endif
 #endif
 
 /*****************************************************************************/

@@ -46,6 +46,7 @@
 #define GDF_32BIT_X888RGB       3
 #define GDF_24BIT_888RGB        4
 #define GDF__8BIT_332RGB        5
+#define GDF_COLOR_INDEX_24_RGB  24
 
 /******************************************************************************/
 /* Export Graphic Driver Control                                              */

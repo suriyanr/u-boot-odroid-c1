@@ -40,6 +40,15 @@
 #define CONFIG_AML_HDMI_TX              1
 #define CONFIG_OSD_SCALE_ENABLE         1
 
+#define CONFIG_CFB_CONSOLE              1
+#define CONFIG_CONSOLE_MUX              1
+#define CONFIG_SYS_CONSOLE_IS_IN_ENV    1
+#define CONFIG_VGA_AS_SINGLE_DEVICE     1
+#define CONSOLE_ENV_SETTINGS \
+ "stdin=serial\0" \
+ "stdout=serial,vga\0" \
+ "stderr=serial,vga\0"
+
 // Enable storage devices
 #define CONFIG_CMD_SF                   1
 #if defined(CONFIG_CMD_SF)
@@ -118,6 +127,7 @@
 #define MK_STR(x)       XMK_STR(x)
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
+	CONSOLE_ENV_SETTINGS \
         "boardname=ODROIDC\0" \
         "bootargs=root=" MK_STR(CONFIG_DEFAULT_ROOT) " rw " \
                 "console=" CONFIG_CONSOLE_PROTOCOL " no_console_suspend\0" \
