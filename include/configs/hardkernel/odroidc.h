@@ -48,6 +48,7 @@
  "stdin=serial\0" \
  "stdout=serial,vga\0" \
  "stderr=serial,vga\0"
+#define CONFIG_SYS_PROMPT		"Odroid-C # "
 
 // Enable storage devices
 #define CONFIG_CMD_SF                   1
