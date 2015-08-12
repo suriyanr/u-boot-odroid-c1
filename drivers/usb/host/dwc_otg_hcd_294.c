@@ -143,17 +143,17 @@ static void dwc_otg_set_force_id(dwc_otg_core_if_t *core_if,int mode)
 	gusbcfg_data.d32 = dwc_read_reg32(&core_if->core_global_regs->gusbcfg);
 	switch(mode){
 		case FORCE_ID_CLEAR:
-			printf("Force id mode: Hardware\n");
+			debug("Force id mode: Hardware\n");
 			gusbcfg_data.b.force_host_mode = 0;
 			gusbcfg_data.b.force_dev_mode = 0;
 			break;
 		case FORCE_ID_HOST:
-			printf("Force id mode: Host\n");
+			debug("Force id mode: Host\n");
 			gusbcfg_data.b.force_host_mode = 1;
 			gusbcfg_data.b.force_dev_mode = 0;
 			break;
 		case FORCE_ID_SLAVE:
-			printf("Force id mode: Slave\n");
+			debug("Force id mode: Slave\n");
 			gusbcfg_data.b.force_host_mode = 0;
 			gusbcfg_data.b.force_dev_mode = 1;
 			break;
@@ -944,7 +944,7 @@ dwc_otg_interrupt(dwc_otg_core_if_t * _core_if, int is_setup,int hcnum,void * bu
 
     }
     if(gintsts.b.portintr){
-        ERR("port status changed: hprt0:0x%08x\n",dwc_read_reg32(_core_if->host_if->hprt0));
+        debug("port status changed: hprt0:0x%08x\n",dwc_read_reg32(_core_if->host_if->hprt0));
         dwc_otg_port_init(_core_if);
         return -2;
     }
@@ -1691,11 +1691,11 @@ next:
     _core_if->host_if->do_ping = 0; // init value
 
     if (hprt0.b.prtspd == DWC_HPRT0_PRTSPD_LOW_SPEED) {//6.1.1.9
-        INFO("Lowspeed device found !\n");
+        debug("Lowspeed device found !\n");
     } else if (hprt0.b.prtspd == DWC_HPRT0_PRTSPD_FULL_SPEED) {
-        INFO("Fullspeed device found !\n");
+        debug("Fullspeed device found !\n");
     } else if (hprt0.b.prtspd == DWC_HPRT0_PRTSPD_HIGH_SPEED) {
-        INFO("Highspeed device found !\n");
+        debug("Highspeed device found !\n");
     }
 
 		return 1;
@@ -1734,7 +1734,7 @@ usb_lowlevel_init(int index)
 #endif
     memset(dwc_otg_device, 0, sizeof(dwc_otg_device_t));
 
-    printf("USB (%d) base addr: 0x%x\n",port_idx,usb_config->base_addr);
+    debug("USB (%d) base addr: 0x%x\n",port_idx,usb_config->base_addr);
     dwc_otg_device->base = (void *)usb_config->base_addr;
     dwc_otg_device->index = index;
     snpsid = dwc_read_reg32((uint32_t *) ((uint8_t *) dwc_otg_device->base + 0x40));
@@ -1768,7 +1768,8 @@ usb_lowlevel_init(int index)
 		id_mode = FORCE_ID_ERROR;
 		break;
 	}
-     dwc_otg_set_force_id(dwc_otg_device->core_if,id_mode);
+     //dwc_otg_set_force_id(dwc_otg_device->core_if,id_mode);
+     dwc_otg_set_force_id(dwc_otg_device->core_if,FORCE_ID_HOST);
     /*
      * Disable the global interrupt until all the interrupt
      * handlers are installed.
@@ -1791,8 +1792,10 @@ usb_lowlevel_init(int index)
      */
     dwc_otg_enable_global_interrupts(dwc_otg_device->core_if);
 
+#if 0
     if(!dwc_otg_port_init(dwc_otg_device->core_if))/* host initialization 6.1.1.3----6.1.1.9*/
 				goto fail;
+#endif
 				
     dwc_otg_hcd_enable = 1;
     dwc_otg_device->disabled = 0;

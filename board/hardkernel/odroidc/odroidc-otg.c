@@ -25,6 +25,15 @@
 #include <asm/arch/gpio.h>
 
 #ifdef CONFIG_USB_DWC_OTG_HCD
+
+static void usb_set_vbus_power(char power)
+{
+	if (power)
+		amlogic_gpio_direction_output(GPIOAO_5, 1);
+	else
+		amlogic_gpio_direction_output(GPIOAO_5, 0);
+}
+
 static int usb_charging_detect_call_back(char bc_mode)
 {
         switch(bc_mode){
@@ -56,7 +65,7 @@ struct amlogic_usb_config g_usb_config_m6_skt_h={
         1,      // PLL div = (clock/12 - 1)
         CONFIG_M8_USBPORT_BASE_A,
         USB_ID_MODE_HARDWARE,
-        NULL,
+        usb_set_vbus_power,
         usb_charging_detect_call_back,
 };
 #endif /*CONFIG_USB_DWC_OTG_HCD*/

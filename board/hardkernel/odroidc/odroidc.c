@@ -60,6 +60,7 @@ int board_init(void)
 #endif
 #ifdef CONFIG_USB_DWC_OTG_HCD
 	board_usb_init(&g_usb_config_m6_skt_b,BOARD_USB_MODE_HOST);
+	board_usb_init(&g_usb_config_m6_skt_h,BOARD_USB_MODE_HOST);
 	board_usb_init(&g_usb_config_m6_skt_h,BOARD_USB_MODE_CHARGER);
 #endif
 

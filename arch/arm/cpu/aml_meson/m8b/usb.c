@@ -21,6 +21,7 @@
  *********************************************************************************/
 //#include <common.h>
 //#include <asm/cache.h>
+#include <asm/arch/gpio.h>
 #include <asm/arch/usb.h>
 
 #ifdef CONFIG_USB_DWC_OTG_HCD
@@ -32,9 +33,25 @@ static char * g_clock_src_name_m8[]={
 
 extern void udelay(unsigned long usec);
 extern void mdelay(unsigned long usec);
+
+void    gl852_hub_reset()
+{
+        amlogic_gpio_direction_output(GPIOAO_4, 0);
+        mdelay(20);
+        amlogic_gpio_direction_output(GPIOAO_4, 1);
+}
+
 //static int reset_count = 0;
 //int set_usb_phy_clk(struct lm_device * plmdev,int is_enable)
 //{
+
+static int set_usb_init_bits()
+{
+	aml_set_reg32_mask(((0xC1100000) + (((0x1051)) << 2)), ((1<<26)));
+	aml_set_reg32_mask(((0xC1100000) + (((0x1051)) << 2)), ((1<<22)));
+	aml_set_reg32_mask(((0xC1100000) + (((0x1052)) << 2)), ((1<<8)));
+}
+
 static int set_usb_phy_clock(amlogic_usb_config_t * usb_cfg)
 {
 	
@@ -49,7 +66,6 @@ static int set_usb_phy_clock(amlogic_usb_config_t * usb_cfg)
 	if(!usb_cfg)
 		return -1;
 
-
 	if(port == USB_PHY_PORT_A){
 		port_idx = 0;
 		peri = (usb_peri_reg_t*)CBUS_REG_ADDR(PREI_USB_PHY_REG_A);
@@ -61,7 +77,7 @@ static int set_usb_phy_clock(amlogic_usb_config_t * usb_cfg)
 		return -1;
 	}
 	writel((1 << 2),P_RESET1_REGISTER);	
-	printf("USB (%d) peri reg base: %x\n",port_idx,(uint32_t)peri);
+	debug("USB (%d) peri reg base: %x\n",port_idx,(uint32_t)peri);
 
 	clk_sel = usb_cfg->clk_selecter;
 	clk_div = usb_cfg->pll_divider;
@@ -70,7 +86,7 @@ static int set_usb_phy_clock(amlogic_usb_config_t * usb_cfg)
 	config.b.clk_32k_alt_sel= 1;
 	peri->config = config.d32;
 
-	printf("USB (%d) use clock source: %s\n",port_idx,g_clock_src_name_m8[clk_sel]);
+	debug("USB (%d) use clock source: %s\n",port_idx,g_clock_src_name_m8[clk_sel]);
 
 	control.d32 = peri->ctrl;
 	control.b.fsel = 5;	/* PHY default is 24M (5), change to 12M (2) */
@@ -128,6 +144,21 @@ void set_usb_phy_power(amlogic_usb_config_t * usb_cfg,int is_on)
 	}
 	udelay(delay);
 
+        /* force ACA enable */
+        if (port == USB_PHY_PORT_B) {
+		usb_adp_bc_data_t adp_bc;
+
+                adp_bc.d32 = peri->adp_bc;
+                adp_bc.b.aca_enable = 1;
+                peri->adp_bc = adp_bc.d32;
+                udelay(50);
+                adp_bc.d32 = peri->adp_bc;
+                if(adp_bc.b.aca_pin_float){
+                        printf("USB-B ID detect failed!\n");
+                        printf("Please use the chip after version RevA1!\n");
+                }
+
+        }
 }
 const char * bc_name[]={
 	"UNKNOWN",
@@ -240,19 +271,24 @@ amlogic_usb_config_t * board_usb_start(int mode,int index)
 		return 0;
 
 
+	set_usb_init_bits();
 	set_usb_phy_clock(g_usb_cfg[mode][index]);
 	set_usb_phy_power(g_usb_cfg[mode][index],1);//on
 	if(mode == BOARD_USB_MODE_CHARGER && 
 	    g_usb_cfg[mode][index]->battery_charging_det_cb)
 		usb_bc_detect(g_usb_cfg[mode][index]);
+
+	gl852_hub_reset();
+
 	return g_usb_cfg[mode][index];
 }
 
 int board_usb_stop(int mode,int index)
 {
-	printf("board_usb_stop cfg: %d\n",mode);
+	debug("board_usb_stop cfg: %d\n",mode);
 	if(mode < 0 || mode >= BOARD_USB_MODE_MAX)
 		return 1;
+	set_usb_init_bits();
 	set_usb_phy_power(g_usb_cfg[mode][index],0);//off
 
 	return 0;
